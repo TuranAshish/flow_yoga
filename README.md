@@ -18,6 +18,7 @@ A modern, responsive yoga and meditation website designed to help users find bal
 - Smooth scrolling navigation
 - Fast loading performance
 - SEO-friendly structure
+- Frequently Asked Questions
 
 ---
 
