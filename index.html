@@ -827,6 +827,37 @@
                 box-shadow: 0 10px 24px rgba(74, 222, 128, 0.28);
             }
 
+            /* Hide Google Translate top banner */
+            .goog-te-banner-frame.skiptranslate {
+                display: none !important;
+            }
+
+            body {
+                top: 0 !important;
+            }
+
+            /* Hide Google translate widget branding */
+            .goog-te-gadget {
+                font-size: 0 !important;
+            }
+
+            .goog-te-gadget img {
+                display: none !important;
+            }
+
+            .goog-logo-link {
+                display: none !important;
+            }
+
+            /* Hide extra Google elements */
+            .goog-te-balloon-frame {
+                display: none !important;
+            }
+
+            .VIpgJd-ZVi9od-ORHb {
+                display: none !important;
+            }
+
             /* ── CONTACT ── */
             .contact-wrap {
                 max-width: 620px;
@@ -980,6 +1011,27 @@
                 font-size: 1.5rem;
                 color: var(--jade);
                 transition: transform 0.3s ease;
+            }
+
+            #languageSwitcher {
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 10px;
+                font-size: 14px;
+                cursor: pointer;
+                margin-left: 15px;
+                backdrop-filter: blur(10px);
+            }
+
+            #languageSwitcher option {
+                background: #111827;
+                color: white;
+            }
+
+            #languageSwitcher:hover {
+                border-color: #22c55e;
             }
 
             .faq-item[open] summary::after {
@@ -1704,6 +1756,45 @@
                 transform: translateY(0);
             }
 
+            .goog-te-banner-frame.skiptranslate,
+            iframe.skiptranslate,
+            [class*="VIpgJd"] {
+                display: none !important;
+            }
+
+            body {
+                top: 0 !important;
+            }
+
+            .lang-wrapper select {
+                background: rgba(255, 255, 255, 0.08);
+                color: #fff;
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 12px;
+                padding: 10px 14px;
+                font-size: 14px;
+                cursor: pointer;
+                backdrop-filter: blur(10px);
+            }
+
+            .lang-wrapper select:hover {
+                border-color: #22c55e;
+            }
+
+            /* Hide Google's ugly widget */
+            #google_translate_element {
+                display: none;
+            }
+
+            .goog-te-banner-frame,
+            .goog-te-gadget-icon {
+                display: none !important;
+            }
+
+            body {
+                top: 0 !important;
+            }
+
             /* ───────────────────────────────
                RESPONSIVE
             ─────────────────────────────── */
@@ -1764,6 +1855,7 @@
         <nav id="navbar">
             <div class="nav-inner">
                 <div class="logo">🧘 Flow Yoga</div>
+
                 <ul class="nav-links">
                     <li><a href="#benefits">Benefits</a></li>
                     <li><a href="#programs">Programs</a></li>
@@ -1773,6 +1865,26 @@
                     <li><a href="#pricing">Pricing</a></li>
                     <li><a href="#contact" class="nav-cta">Get Started</a></li>
                 </ul>
+
+                <div class="lang-wrapper">
+                    <select id="langSelect">
+                        <option value="">🌐 Language</option>
+                        <option value="en">English</option>
+                        <option value="hi">हिन्दी</option>
+                        <option value="fr">Français</option>
+                        <option value="de">Deutsch</option>
+                        <option value="es">Español</option>
+                        <option value="it">Italiano</option>
+                        <option value="ja">日本語</option>
+                        <option value="ko">한국어</option>
+                        <option value="zh-CN">中文</option>
+                        <option value="ru">Русский</option>
+                        <option value="ar">العربية</option>
+                    </select>
+                </div>
+
+                <div id="google_translate_element"></div>
+
                 <button
                     class="hamburger"
                     id="hamburger"
@@ -1783,7 +1895,6 @@
                 </button>
             </div>
         </nav>
-
         <div class="mobile-menu" id="mobileMenu">
             <a href="#benefits" onclick="toggleMenu()">Benefits</a>
             <a href="#programs" onclick="toggleMenu()">Programs</a>
@@ -3658,5 +3769,55 @@
                 />
             </svg>
         </a>
+        <script>
+            function googleTranslateElementInit() {
+                new google.translate.TranslateElement(
+                    {
+                        pageLanguage: "en",
+                        autoDisplay: false,
+                    },
+                    "google_translate_element",
+                );
+            }
+
+            document
+                .getElementById("langSelect")
+                .addEventListener("change", function () {
+                    const lang = this.value;
+
+                    const interval = setInterval(() => {
+                        const googleSelect =
+                            document.querySelector(".goog-te-combo");
+
+                        if (googleSelect) {
+                            googleSelect.value = lang;
+                            googleSelect.dispatchEvent(new Event("change"));
+                            clearInterval(interval);
+                        }
+                    }, 500);
+                });
+            function googleTranslateElementInit() {
+                new google.translate.TranslateElement(
+                    {
+                        pageLanguage: "en",
+                        autoDisplay: false,
+                    },
+                    "google_translate_element",
+                );
+            }
+        </script>
+
+        <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+        <script>
+            setInterval(() => {
+                document.body.style.top = "0px";
+
+                const banner = document.querySelector(".goog-te-banner-frame");
+                if (banner) {
+                    banner.style.display = "none";
+                }
+            }, 500);
+        </script>
     </body>
 </html>
