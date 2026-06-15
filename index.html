@@ -1940,9 +1940,94 @@
                 .poses-grid {
                     grid-template-columns: 1fr 1fr;
                 }
+                /* ── POSE ANIMATION ── */
+
+                .pose-media {
+                    width: 100%;
+                    height: 165px;
+                    margin-bottom: 18px;
+                    border-radius: 18px;
+                    overflow: hidden;
+                    position: relative;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    background: radial-gradient(
+                        circle at center,
+                        rgba(74, 222, 128, 0.15),
+                        rgba(74, 222, 128, 0.025) 70%
+                    );
+
+                    border: 1px solid rgba(74, 222, 128, 0.15);
+                }
+
+                .pose-animation {
+                    width: 100%;
+                    height: 100%;
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .pose-animation svg {
+                    width: 100% !important;
+                    height: 100% !important;
+                }
+
+                .pose-animation-fallback {
+                    position: absolute;
+                    inset: 0;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    font-size: 3.2rem;
+                    opacity: 0.8;
+                }
+
+                .pose-animation.is-loaded .pose-animation-fallback {
+                    display: none;
+                }
+
+                .pose-animation.is-error .pose-animation-fallback {
+                    display: flex;
+                }
+
+                /* Modal animation */
+
+                .modal-pose-animation {
+                    width: 100%;
+                    height: 280px;
+                    margin-bottom: 20px;
+                    border-radius: 22px;
+                    overflow: hidden;
+
+                    background: radial-gradient(
+                        circle at center,
+                        rgba(74, 222, 128, 0.15),
+                        rgba(74, 222, 128, 0.02) 70%
+                    );
+
+                    border: 1px solid rgba(74, 222, 128, 0.15);
+                }
+
+                @media (max-width: 480px) {
+                    .pose-media {
+                        height: 115px;
+                    }
+
+                    .modal-pose-animation {
+                        height: 220px;
+                    }
+                }
                 .pose-card {
                     padding: 18px 14px;
                 }
+
                 .pose-stats {
                     gap: 24px;
                 }
@@ -3649,6 +3734,16 @@
                 },
             ];
 
+            /* ─── POSE ANIMATION FILES ─── */
+
+            const poseAnimationFiles = {
+                6: "animations/tree-pose.json",
+            };
+
+            poses.forEach((pose) => {
+                pose.animation = poseAnimationFiles[pose.id] || "";
+            });
+
             /* ─── STATE ─── */
             let activeLevel = "All";
             let activeFocus = "All";
@@ -3662,7 +3757,53 @@
                       ? "adv"
                       : "";
             }
+            /* ─── LOTTIE ANIMATION LOADER ─── */
 
+            function mountPoseAnimation(
+                container,
+                animationPath,
+                fallbackEmoji = "🧘",
+                autoplay = true,
+            ) {
+                if (!container) return null;
+
+                container.innerHTML = `
+                    <span class="pose-animation-fallback">
+                        ${fallbackEmoji}
+                    </span>
+                `;
+
+                container.classList.remove("is-loaded", "is-error");
+
+                if (!animationPath || !window.lottie) {
+                    container.classList.add("is-error");
+                    return null;
+                }
+
+                try {
+                    const animation = lottie.loadAnimation({
+                        container: container,
+                        renderer: "svg",
+                        loop: true,
+                        autoplay: autoplay,
+                        path: animationPath,
+                    });
+
+                    animation.addEventListener("DOMLoaded", () => {
+                        container.classList.add("is-loaded");
+                    });
+
+                    animation.addEventListener("data_failed", () => {
+                        container.classList.add("is-error");
+                    });
+
+                    return animation;
+                } catch (error) {
+                    console.error("Animation failed:", error);
+                    container.classList.add("is-error");
+                    return null;
+                }
+            }
             /* ─── RENDER GRID ─── */
             function renderPoses() {
                 const grid = document.getElementById("posesGrid");
@@ -3706,7 +3847,17 @@
                     card.style.transitionDelay = i * 0.055 + "s";
                     card.onclick = () => openModal(p.id);
                     card.innerHTML = `
-                  <div class="pose-icon-wrap">${p.emoji}</div>
+                      <div class="pose-media">
+                          <div
+                              class="pose-animation"
+                              role="img"
+                              aria-label="${p.name} animation"
+                          >
+                              <span class="pose-animation-fallback">
+                                  ${p.emoji}
+                              </span>
+                          </div>
+                      </div>
                   <div class="pose-name">${p.name}</div>
                   <div class="pose-sanskrit">${p.sanskrit}</div>
                   <span class="pose-level-badge ${levelClass(p.level)}">${p.level}</span>
@@ -3719,6 +3870,17 @@
                   </div>
                 `;
                     grid.appendChild(card);
+
+                    const animationContainer =
+                        card.querySelector(".pose-animation");
+
+                    mountPoseAnimation(
+                        animationContainer,
+                        p.animation,
+                        p.emoji,
+                        true,
+                    );
+
                     revealObserver.observe(card);
                 });
             }
