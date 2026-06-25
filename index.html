@@ -433,6 +433,68 @@
             .b-instruction { font-size: 1rem; color: var(--muted); margin-bottom: 10px; transition: opacity 0.4s ease; }
             .b-tip { font-size: 0.78rem; color: rgba(148,163,184,0.5); }
 
+            /* Editable box-breathing durations */
+            .breath-settings {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 10px;
+                margin: 0 auto 14px;
+            }
+            .breath-setting {
+                display: flex;
+                flex-direction: column;
+                gap: 7px;
+                text-align: left;
+            }
+            .breath-setting label {
+                color: var(--muted);
+                font-size: 0.67rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+            .breath-duration {
+                width: 100%;
+                min-width: 0;
+                padding: 11px 8px;
+                text-align: center;
+                color: var(--text);
+                background: var(--glass);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                outline: none;
+                font-family: "DM Mono", monospace;
+                font-size: 0.95rem;
+                transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            }
+            .breath-duration:focus {
+                border-color: var(--jade);
+                box-shadow: 0 0 0 3px rgba(74,222,128,0.12);
+                background: rgba(255,255,255,0.07);
+            }
+            .breath-apply-btn {
+                width: 100%;
+                margin: 0 auto 32px;
+                padding: 13px;
+                border: none;
+                border-radius: 14px;
+                background: linear-gradient(135deg, var(--jade), var(--teal));
+                color: #000;
+                font-family: "DM Sans", sans-serif;
+                font-size: 0.9rem;
+                font-weight: 700;
+                cursor: pointer;
+                transition: transform 0.25s ease, box-shadow 0.25s ease;
+            }
+            .breath-apply-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 28px rgba(74,222,128,0.22);
+            }
+            .breath-apply-btn:focus-visible {
+                outline: 3px solid rgba(74,222,128,0.35);
+                outline-offset: 3px;
+            }
+
             /* ── TESTIMONIALS ── */
             .testi-card { padding: 32px; }
             .stars { font-size: 0.85rem; margin-bottom: 16px; color: #fcd34d; }
@@ -902,6 +964,7 @@
                 .bmi-card { padding: 32px 24px; }
             }
             @media (max-width: 480px) {
+                .breath-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
                 .poses-grid { grid-template-columns: 1fr 1fr; }
                 .pose-media { height: 115px; margin-bottom: 14px; }
                 .modal-pose-animation { height: 220px; }
@@ -1125,15 +1188,36 @@
                 <div class="section-label">
                     <div class="eyebrow"><span class="dot"></span>Breathwork</div>
                     <h2>Box breathing</h2>
-                    <p>4-4-4-4 pattern — used to achieve instant calm and clarity.</p>
+                    <p id="breathPatternText">4-4-4-4 pattern — used to achieve instant calm and clarity.</p>
                 </div>
                 <div class="breath-wrap">
+                    <div class="breath-settings" aria-label="Box breathing duration settings">
+                        <div class="breath-setting">
+                            <label for="inhaleDuration">Inhale</label>
+                            <input class="breath-duration" type="number" id="inhaleDuration" value="4" min="1" max="30" inputmode="numeric"/>
+                        </div>
+                        <div class="breath-setting">
+                            <label for="holdOneDuration">Hold 1</label>
+                            <input class="breath-duration" type="number" id="holdOneDuration" value="4" min="1" max="30" inputmode="numeric"/>
+                        </div>
+                        <div class="breath-setting">
+                            <label for="exhaleDuration">Exhale</label>
+                            <input class="breath-duration" type="number" id="exhaleDuration" value="4" min="1" max="30" inputmode="numeric"/>
+                        </div>
+                        <div class="breath-setting">
+                            <label for="holdTwoDuration">Hold 2</label>
+                            <input class="breath-duration" type="number" id="holdTwoDuration" value="4" min="1" max="30" inputmode="numeric"/>
+                        </div>
+                    </div>
+
+                    <button class="breath-apply-btn" type="button" id="breathApplyBtn">Apply Breathing Pattern</button>
+
                     <div class="breath-ring">
                         <svg viewBox="0 0 240 240"><circle class="b-track" cx="120" cy="120" r="110"/><circle class="b-fill" id="breathRing" cx="120" cy="120" r="110"/></svg>
                         <div class="breath-inner" id="breathInner"><div class="b-phase" id="bPhase">INHALE</div><div class="b-count" id="bCount">4</div></div>
                     </div>
                     <p class="b-instruction" id="bInstruction">Breathe in slowly through your nose</p>
-                    <p class="b-tip">Each full cycle is 16 seconds &middot; Follow the pulse</p>
+                    <p class="b-tip" id="breathCycleTip">Each full cycle is 16 seconds &middot; Follow the pulse</p>
                 </div>
             </div>
         </section>
@@ -1494,31 +1578,94 @@
         /* ── BREATHING ── */
         const BCIRC = 2 * Math.PI * 110;
         const bRing = document.getElementById("breathRing");
-        bRing.style.strokeDasharray = BCIRC; bRing.style.strokeDashoffset = BCIRC;
+        const bPhase = document.getElementById("bPhase");
+        const bCount = document.getElementById("bCount");
+        const bInstruction = document.getElementById("bInstruction");
+        const breathInner = document.getElementById("breathInner");
+        const breathPatternText = document.getElementById("breathPatternText");
+        const breathCycleTip = document.getElementById("breathCycleTip");
+        const breathApplyBtn = document.getElementById("breathApplyBtn");
+
+        bRing.style.strokeDasharray = BCIRC;
+        bRing.style.strokeDashoffset = BCIRC;
+
         const phases = [
-            { name:"INHALE", dur:4, msg:"Breathe in slowly through your nose",    color:"#4ADE80" },
-            { name:"HOLD",   dur:4, msg:"Hold gently — stay still",               color:"#22D3EE" },
-            { name:"EXHALE", dur:4, msg:"Release slowly through your mouth",      color:"#A78BFA" },
-            { name:"HOLD",   dur:4, msg:"Rest before the next breath begins",     color:"#F472B6" },
+            { name:"INHALE", dur:4, msg:"Breathe in slowly through your nose", color:"#4ADE80" },
+            { name:"HOLD", dur:4, msg:"Hold gently — stay still", color:"#22D3EE" },
+            { name:"EXHALE", dur:4, msg:"Release slowly through your mouth", color:"#A78BFA" },
+            { name:"HOLD", dur:4, msg:"Rest before the next breath begins", color:"#F472B6" },
         ];
-        let pi=0, sec=phases[0].dur;
-        function updateBreath(){
-            const p=phases[pi]; const elapsed=p.dur-sec;
-            document.getElementById("bPhase").textContent=p.name;
-            document.getElementById("bCount").textContent=sec;
-            document.getElementById("bInstruction").textContent=p.msg;
-            bRing.style.strokeDashoffset=BCIRC*(1-elapsed/p.dur);
-            bRing.style.stroke=p.color;
-            bRing.style.filter="drop-shadow(0 0 8px "+p.color+"80)";
-            const inner=document.getElementById("breathInner");
-            inner.style.background="radial-gradient(circle,"+p.color+"28,"+p.color+"06)";
-            inner.style.borderColor=p.color+"40";
-            document.getElementById("bPhase").style.color=p.color;
-            sec--;
-            if(sec<0){ pi=(pi+1)%phases.length; sec=phases[pi].dur; bRing.style.strokeDashoffset=BCIRC; }
+
+        let pi = 0;
+        let sec = phases[0].dur;
+
+        function readBreathDuration(id) {
+            const input = document.getElementById(id);
+            let value = Number.parseInt(input.value, 10);
+
+            if (!Number.isFinite(value)) value = 4;
+            value = Math.min(30, Math.max(1, value));
+            input.value = value;
+
+            return value;
         }
-        updateBreath();
-        setInterval(updateBreath,1000);
+
+        function renderBreath() {
+            const phase = phases[pi];
+            const elapsed = phase.dur - sec;
+
+            bPhase.textContent = phase.name;
+            bCount.textContent = sec;
+            bInstruction.textContent = phase.msg;
+            bRing.style.strokeDashoffset = BCIRC * (1 - elapsed / phase.dur);
+            bRing.style.stroke = phase.color;
+            bRing.style.filter = "drop-shadow(0 0 8px " + phase.color + "80)";
+            breathInner.style.background = "radial-gradient(circle," + phase.color + "28," + phase.color + "06)";
+            breathInner.style.borderColor = phase.color + "40";
+            bPhase.style.color = phase.color;
+        }
+
+        function updateBreath() {
+            renderBreath();
+            sec--;
+
+            if (sec < 1) {
+                pi = (pi + 1) % phases.length;
+                sec = phases[pi].dur;
+                bRing.style.strokeDashoffset = BCIRC;
+            }
+        }
+
+        function applyBreathingDurations() {
+            const inhale = readBreathDuration("inhaleDuration");
+            const holdOne = readBreathDuration("holdOneDuration");
+            const exhale = readBreathDuration("exhaleDuration");
+            const holdTwo = readBreathDuration("holdTwoDuration");
+
+            phases[0].dur = inhale;
+            phases[1].dur = holdOne;
+            phases[2].dur = exhale;
+            phases[3].dur = holdTwo;
+
+            const cycleLength = inhale + holdOne + exhale + holdTwo;
+            breathPatternText.textContent = inhale + "-" + holdOne + "-" + exhale + "-" + holdTwo + " pattern — customize each stage for your comfort.";
+            breathCycleTip.innerHTML = "Each full cycle is " + cycleLength + " seconds &middot; Follow the pulse";
+
+            pi = 0;
+            sec = phases[0].dur;
+            bRing.style.strokeDashoffset = BCIRC;
+            renderBreath();
+        }
+
+        breathApplyBtn.addEventListener("click", applyBreathingDurations);
+        document.querySelectorAll(".breath-duration").forEach(input => {
+            input.addEventListener("keydown", event => {
+                if (event.key === "Enter") applyBreathingDurations();
+            });
+        });
+
+        renderBreath();
+        setInterval(updateBreath, 1000);
 
         /* ════════════════════════════════
            BMI CALCULATOR
